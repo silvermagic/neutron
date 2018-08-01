@@ -631,7 +631,9 @@ class OVSNeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
                     LOG.error(_LE("No local VLAN available for net-id=%s"),
                               net_uuid)
                     return
-                lvid = self.available_local_vlans.pop()
+                #lvid = self.available_local_vlans.pop()
+                self.available_local_vlans.remove(segmentation_id)
+                lvid = segmentation_id
             self.vlan_manager.add(
                 net_uuid, lvid, network_type, physical_network,
                 segmentation_id)
