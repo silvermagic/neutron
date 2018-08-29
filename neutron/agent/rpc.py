@@ -86,6 +86,11 @@ class PluginReportStateAPI(object):
         method = cctxt.call if use_call else cctxt.cast
         return method(context, 'report_state', **kwargs)
 
+    def report_port_up(self, context, server_mac, vlan_use_segment, ports, use_call=False):
+        cctxt = self.client.prepare(timeout=n_rpc.TRANSPORT.conf.rpc_response_timeout)
+        method = cctxt.call if use_call else cctxt.cast
+        return method(context, 'report_port_up', server_mac=server_mac, vlan_use_segment=vlan_use_segment, ports=ports)
+
 
 class PluginApi(object):
     '''Agent side of the rpc API.
@@ -149,3 +154,4 @@ class PluginApi(object):
         cctxt = self.client.prepare(version='1.4')
         return cctxt.call(context, 'tunnel_sync', tunnel_ip=tunnel_ip,
                           tunnel_type=tunnel_type, host=host)
+

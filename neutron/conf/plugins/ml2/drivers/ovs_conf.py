@@ -155,7 +155,11 @@ agent_opts = [
                        "outgoing IP packet carrying GRE/VXLAN tunnel.")),
     cfg.StrOpt('agent_type', default=n_const.AGENT_TYPE_OVS,
                deprecated_for_removal=True,
-               help=_("Selects the Agent Type reported"))
+               help=_("Selects the Agent Type reported")),
+    cfg.BoolOpt('vlan_use_segment', default=True,
+                help=_("use segmentation id as local vlan id")),
+    cfg.StrOpt('server_mac', default='',
+               help=_("The external network mac address of the host where the agent is located"))
 ]
 
 

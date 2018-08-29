@@ -139,6 +139,8 @@ class OVSNeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
         agent_conf = self.conf.AGENT
         ovs_conf = self.conf.OVS
 
+        self.vlan_use_segment = agent_conf.vlan_use_segment
+        self.server_mac = agent_conf.server_mac
         self.fullsync = False
         # init bridge classes with configured datapath type.
         self.br_int_cls, self.br_phys_cls, self.br_tun_cls = (
@@ -631,9 +633,11 @@ class OVSNeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
                     LOG.error(_LE("No local VLAN available for net-id=%s"),
                               net_uuid)
                     return
-                #lvid = self.available_local_vlans.pop()
-                self.available_local_vlans.remove(segmentation_id)
-                lvid = segmentation_id
+                if self.vlan_use_segment:
+                    self.available_local_vlans.remove(segmentation_id)
+                    lvid = segmentation_id
+                else:
+                    lvid = self.available_local_vlans.pop()
             self.vlan_manager.add(
                 net_uuid, lvid, network_type, physical_network,
                 segmentation_id)
@@ -842,6 +846,7 @@ class OVSNeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
         port_info = self.int_br.get_ports_attributes(
             "Port", columns=["name", "tag"], ports=port_names, if_exists=True)
         tags_by_name = {x['name']: x['tag'] for x in port_info}
+        ports = []
         for port_detail in need_binding_ports:
             try:
                 lvm = self.vlan_manager.get(port_detail['network_id'])
@@ -872,9 +877,12 @@ class OVSNeutronAgent(sg_rpc.SecurityGroupAgentRpcCallbackMixin,
             if port_detail.get('admin_state_up'):
                 LOG.debug("Setting status for %s to UP", device)
                 devices_up.append(device)
+                ports.append({"port_id": device, "vlan": lvm.vlan})
             else:
                 LOG.debug("Setting status for %s to DOWN", device)
                 devices_down.append(device)
+        if ports:
+            self.state_rpc.report_port_up(self.context, self.server_mac, self.vlan_use_segment, ports)
         if devices_up or devices_down:
             devices_set = self.plugin_rpc.update_device_list(
                 self.context, devices_up, devices_down, self.agent_id,
